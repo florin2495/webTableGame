@@ -15,6 +15,7 @@ import {
   resignGame,
   rollTurn,
   singleMoves,
+  sumMoves,
   turnRules,
   type Board,
   type GameState,
@@ -185,6 +186,93 @@ describe("playTurn / commitTurn", () => {
     const r = resignGame(g, 0);
     expect(r.winner).toBe(1);
     expect(r.points).toBe(2);
+  });
+});
+
+describe("moving a checker by the sum of the dice", () => {
+  const dests = (r: ReturnType<typeof sumMoves>) => r.map((x) => x.dest).sort((a, b) => b - a);
+
+  it("offers the sum point for two different dice", () => {
+    const b = board({ 13: 1, 6: 14 }, {});
+    const r = sumMoves(b, 0, [3, 5], [], 13);
+    expect(dests(r)).toEqual([5]);
+    expect(r[0].moves).toHaveLength(2);
+    expect(r[0].moves[0].from).toBe(13);
+  });
+
+  it("uses the only order whose intermediate point is open", () => {
+    // Black holds white's point 10 (black pos 15): 3 first is blocked, 5 first then 3 works.
+    const b = board({ 13: 1, 6: 14 }, { 15: 2 });
+    expect(sumMoves(b, 0, [3, 5], [], 13)).toEqual([{ dest: 5, moves: [{ from: 13, die: 5 }, { from: 8, die: 3 }], hits: 0 }]);
+  });
+
+  it("offers nothing when both intermediate points are blocked", () => {
+    // White pos 10 (black 15) and 8 (black 17) blocked; another checker keeps the turn playable.
+    const b = board({ 13: 1, 20: 1 }, { 15: 2, 17: 2 });
+    expect(turnRules(b, 0, [3, 5]).required).toBe(2);
+    expect(sumMoves(b, 0, [3, 5], [], 13)).toEqual([]);
+  });
+
+  it("prefers the order that does not hit when both reach the same point", () => {
+    const b = board({ 13: 1, 6: 14 }, { 15: 1 }); // blot on white's 10
+    const r = sumMoves(b, 0, [3, 5], [], 13);
+    expect(r).toEqual([{ dest: 5, moves: [{ from: 13, die: 5 }, { from: 8, die: 3 }], hits: 0 }]);
+  });
+
+  it("hits on the intermediate point when that is the only order", () => {
+    const b = board({ 13: 1, 6: 14 }, { 15: 1, 17: 2 }); // blot on 10, 8 blocked
+    const r = sumMoves(b, 0, [3, 5], [], 13);
+    expect(r).toEqual([{ dest: 5, moves: [{ from: 13, die: 3 }, { from: 10, die: 5 }], hits: 1 }]);
+    const g: GameState = { ...newGame(1), board: b, turn: 0, phase: "move", dice: [3, 5], opening: null };
+    const next = commitTurn(g, r[0].moves);
+    expect(typeof next).not.toBe("string");
+    if (typeof next !== "string") {
+      expect(next.board.bar[1]).toBe(1);
+      expect(next.lastTurn?.hits).toEqual([true, false]);
+    }
+  });
+
+  it("doubles go two, three and four steps", () => {
+    const b = board({ 20: 1 }, {});
+    const r = sumMoves(b, 0, [4, 4], [], 20);
+    expect(dests(r)).toEqual([12, 8, 4]);
+    expect(r.map((x) => x.moves.length).sort()).toEqual([2, 3, 4]);
+    // After one step has been played, fewer remain.
+    const after = sumMoves(b, 0, [4, 4], [{ from: 20, die: 4 }], 16);
+    expect(dests(after)).toEqual([8, 4]);
+  });
+
+  it("stops at a blocked point when doubles run into it", () => {
+    const b = board({ 20: 1, 6: 14 }, { 17: 2 }); // black holds white's 8
+    expect(dests(sumMoves(b, 0, [4, 4], [], 20))).toEqual([12]);
+  });
+
+  it("enters from the bar and continues with the other die", () => {
+    const b = board({ 13: 1, 6: 14 }, {}, { bar: [1, 0] });
+    const r = sumMoves(b, 0, [3, 5], [], BAR);
+    expect(dests(r)).toEqual([17]);
+    expect(r[0].moves[0].from).toBe(BAR);
+    expect(sumMoves(b, 0, [3, 5], [], 13)).toEqual([]); // the bar must be entered first
+  });
+
+  it("bears off with the sum", () => {
+    const b = board({ 3: 1 }, {});
+    const r = sumMoves(b, 0, [1, 2], [], 3);
+    expect(dests(r)).toEqual([0]);
+    expect(r[0].moves).toHaveLength(2);
+  });
+
+  it("respects the larger-die and must-use-both rules", () => {
+    // Only one die can be played -> no sum.
+    expect(sumMoves(board({ 12: 1 }, { 24: 2 }), 0, [6, 5], [], 12)).toEqual([]);
+    // Must play both dice: 1 first is blocked, so the sum is only reachable as 6 then 1.
+    const b = board({ 10: 1 }, { 16: 2 });
+    expect(sumMoves(b, 0, [6, 1], [], 10)).toEqual([{ dest: 3, moves: [{ from: 10, die: 6 }, { from: 4, die: 1 }], hits: 0 }]);
+  });
+
+  it("black uses the same logic in its own direction", () => {
+    const b = board({ 6: 14 }, { 13: 1 });
+    expect(dests(sumMoves(b, 1, [2, 3], [], 13))).toEqual([8]);
   });
 });
 

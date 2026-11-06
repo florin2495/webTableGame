@@ -5,19 +5,23 @@ import { api } from "@/lib/client/api";
 import { PREF_SOUND, readPref } from "@/lib/client/prefs";
 import { playChecker, playDice, playWin, playYourTurn } from "@/lib/client/sound";
 import {
+  applyMove,
   BAR,
   expandDice,
   indexOf,
   moveLabel,
   pipCount,
   playTurn,
+  posOf,
   seatName,
+  sumMoves,
+  type Board as BoardData,
   type GameState,
   type Move,
   type Seat,
 } from "@/lib/game";
 import type { RoomState } from "@/lib/types";
-import { Board, type Spot } from "./Board";
+import { Board, type Playback, type Spot } from "./Board";
 import { CheckerDot, Die } from "./Dice";
 import { MemberList } from "./MemberList";
 import { Button, Card, ErrorText } from "./ui";
@@ -31,16 +35,44 @@ interface Props {
 
 const soundOn = () => readPref(PREF_SOUND) !== "0";
 
+const sameBoard = (a: BoardData, b: BoardData) =>
+  a.points.every((n, i) => n === b.points[i]) && a.bar[0] === b.bar[0] && a.bar[1] === b.bar[1] && a.off[0] === b.off[0] && a.off[1] === b.off[1];
+
+/**
+ * The checker slides to show for a state change: the last turn replayed from the board we had
+ * before. Only when the replay really ends on the new board (otherwise we missed an update: snap).
+ * Nothing for my own move - I already saw it slide while composing it.
+ */
+function derivePlayback(prev: GameState | null, game: GameState, version: number, mySeat: Seat | null): Playback | null {
+  const last = game.lastTurn;
+  if (!prev || !last || last.passed || last.resigned || last.moves.length === 0) return null;
+  if (prev.gameNo !== game.gameNo || last.seat === mySeat || sameBoard(prev.board, game.board)) return null;
+  let b = prev.board;
+  for (const m of last.moves) b = applyMove(b, last.seat, m).board;
+  if (!sameBoard(b, game.board)) return null;
+  return { id: `v${version}`, seat: last.seat, start: prev.board, moves: last.moves };
+}
+
 export function Game({ state, game, token, refresh }: Props) {
   const { room, me, players } = state;
   const nick = (s: Seat) => players.find((p) => p.seat === s)?.nickname ?? seatName(s);
   useGameSounds(state, game);
 
+  // Derived during render (React's "adjust state on prop change" pattern): the move animation to show.
+  const [seen, setSeen] = useState<{ version: number; game: GameState | null }>({ version: room.version, game: null });
+  const [playback, setPlayback] = useState<Playback | null>(null);
+  if (seen.version !== room.version) {
+    setSeen({ version: room.version, game });
+    setPlayback(derivePlayback(seen.game, game, room.version, me.seat));
+  } else if (seen.game === null) {
+    setSeen({ version: room.version, game });
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <ScoreBar state={state} game={game} nick={nick} />
       {/* key: a new server state (new version) resets the half-played local turn */}
-      <Play key={room.version} state={state} game={game} token={token} refresh={refresh} nick={nick} />
+      <Play key={room.version} state={state} game={game} token={token} refresh={refresh} nick={nick} remotePlayback={playback} />
       {room.status === "finished" && <GameOver state={state} game={game} token={token} refresh={refresh} nick={nick} />}
       {me.seat === null && (
         <p className="rounded-lg bg-sky-100 px-3 py-2 text-center text-sm text-sky-900 dark:bg-sky-950 dark:text-sky-200">
@@ -91,14 +123,18 @@ function ScoreBar({ state, game, nick }: { state: RoomState; game: GameState; ni
   );
 }
 
-function Play({ state, game, token, refresh, nick }: Props & { nick: (s: Seat) => string }) {
+function Play({ state, game, token, refresh, nick, remotePlayback }: Props & { nick: (s: Seat) => string; remotePlayback: Playback | null }) {
   const { room, me } = state;
   const seat = me.seat;
   const view: Seat = seat ?? 0;
   const myTurn = room.status === "playing" && seat !== null && game.turn === seat;
   const canMove = myTurn && game.phase === "move" && game.dice !== null;
 
-  const [moves, setMoves] = useState<Move[]>([]);
+  // Each tap is a "batch": one die, or several dice for a checker moved by the sum. Undo removes a batch.
+  const [batches, setBatches] = useState<Move[][]>([]);
+  const moves = useMemo(() => batches.flat(), [batches]);
+  const [localPlay, setLocalPlay] = useState<Playback | null>(null);
+  const playId = useRef(0);
   const [selected, setSelected] = useState<Spot | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -119,21 +155,33 @@ function Play({ state, game, token, refresh, nick }: Props & { nick: (s: Seat) =
   const next = progress?.next ?? [];
   const selectable = new Set<Spot>(next.map((m) => spotOf(m.from)));
   // Destination -> the smallest die that gets the selected checker there.
-  const destinations = new Map<Spot, Move>();
-  if (selected !== null) {
+  const destinations = new Map<Spot, Move[]>();
+  const sumDestinations = new Set<Spot>();
+  if (selected !== null && seat !== null && game.dice) {
+    const single = new Map<Spot, Move>();
     for (const m of next) {
       if (spotOf(m.from) !== selected) continue;
       const d = destOf(m);
-      const cur = destinations.get(d);
-      if (!cur || m.die < cur.die) destinations.set(d, m);
+      const cur = single.get(d);
+      if (!cur || m.die < cur.die) single.set(d, m);
+    }
+    for (const [d, m] of single) destinations.set(d, [m]);
+    // Several dice with the same checker; a point a single die reaches keeps the single move.
+    const from = typeof selected === "number" ? posOf(seat, selected) : BAR;
+    for (const sm of sumMoves(game.board, seat, game.dice, moves, from)) {
+      const d: Spot = sm.dest <= 0 ? "off" : indexOf(seat, sm.dest);
+      if (destinations.has(d)) continue;
+      destinations.set(d, sm.moves);
+      sumDestinations.add(d);
     }
   }
 
   function onSpot(spot: Spot) {
     if (busy) return;
-    const move = selected !== null ? destinations.get(spot) : undefined;
-    if (move) {
-      setMoves([...moves, move]);
+    const batch = selected !== null ? destinations.get(spot) : undefined;
+    if (batch && seat !== null) {
+      setBatches([...batches, batch]);
+      setLocalPlay({ id: `l${++playId.current}`, seat, start: shownBoard, moves: batch });
       setSelected(null);
       if (soundOn()) playChecker();
       return;
@@ -178,7 +226,9 @@ function Play({ state, game, token, refresh, nick }: Props & { nick: (s: Seat) =
         view={view}
         selectable={canMove ? selectable : undefined}
         selected={selected}
-        destinations={new Set(destinations.keys())}
+        destinations={new Set([...destinations.keys()].filter((d) => !sumDestinations.has(d)))}
+        sumDestinations={sumDestinations}
+        playback={localPlay ?? remotePlayback}
         recent={recent}
         onSpot={canMove ? onSpot : undefined}
       />
@@ -208,10 +258,11 @@ function Play({ state, game, token, refresh, nick }: Props & { nick: (s: Seat) =
             <Button
               variant="secondary"
               onClick={() => {
-                setMoves(moves.slice(0, -1));
+                setBatches(batches.slice(0, -1));
+                setLocalPlay({ id: `l${++playId.current}`, seat: view, start: game.board, moves: [] });
                 setSelected(null);
               }}
-              disabled={busy || moves.length === 0}
+              disabled={busy || batches.length === 0}
             >
               ↶ Anulează
             </Button>
@@ -266,7 +317,7 @@ function TurnCaption({
         ? "E rândul tău."
         : progressDone
           ? "Gata. Apasă „Confirmă” (sau „Anulează” ca să schimbi)."
-          : "Alege o piesă (conturată cu albastru), apoi unde o muți (cercul verde).";
+          : "Alege o piesă (conturată cu albastru), apoi unde o muți (cerc verde = un zar, albastru punctat = suma zarurilor).";
   } else {
     text = game.phase === "roll" ? `${nick(game.turn)} dă cu zarul…` : `${nick(game.turn)} mută…`;
   }

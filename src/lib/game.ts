@@ -250,6 +250,52 @@ export function playTurn(start: Board, seat: Seat, dice: readonly number[], move
   return { board, remaining, hits, next, done: need === 0, required: rules.required };
 }
 
+/** A destination reached by combining several dice with one checker. */
+export interface SumMove {
+  /** Mover-relative landing position; 0 = borne off. */
+  dest: number;
+  /** The single-die moves, in order, that get the checker there. */
+  moves: Move[];
+  hits: number;
+}
+
+/**
+ * Destinations reachable by moving the checker on `from` (1..24 or BAR) with two or more of the
+ * remaining dice in a row (non-doubles: a+b in either order; doubles: up to four steps). Each step
+ * must itself be a legal next move of the turn (so bar entry, bearing off and the "use as many dice
+ * as possible / larger die" rules all hold), and intermediate hits really happen. When several
+ * sequences reach the same point, the one with the fewest hits wins. `moves` are the moves already
+ * played this turn. Single-die destinations are not included.
+ */
+export function sumMoves(start: Board, seat: Seat, dice: readonly number[], moves: readonly Move[], from: number): SumMove[] {
+  const progress = playTurn(start, seat, dice, moves);
+  if (typeof progress === "string" || progress.done) return [];
+  const rules = turnRules(start, seat, dice);
+  const best = new Map<number, SumMove>();
+
+  const walk = (b: Board, pos: number, rem: readonly number[], need: number, force: number | null, path: Move[], hits: number) => {
+    if (need <= 0 || rem.length === 0) return;
+    for (const m of legalNextMoves(b, seat, rem, need, force)) {
+      if (m.from !== pos) continue;
+      const r = applyMove(b, seat, m);
+      const nextPath = [...path, m];
+      const nextHits = hits + (r.hit ? 1 : 0);
+      const to = pos - m.die;
+      if (nextPath.length >= 2) {
+        const dest = Math.max(to, 0);
+        const cur = best.get(dest);
+        if (!cur || nextHits < cur.hits || (nextHits === cur.hits && nextPath.length < cur.moves.length)) {
+          best.set(dest, { dest, moves: nextPath, hits: nextHits });
+        }
+      }
+      if (to >= 1) walk(r.board, to, removeDie(rem, m.die), need - 1, null, nextPath, nextHits);
+    }
+  };
+  const need = rules.required - moves.length;
+  walk(progress.board, from, progress.remaining, need, moves.length === 0 ? rules.forceDie : null, [], 0);
+  return [...best.values()];
+}
+
 /** Total pips a player still has to travel (lower is better). */
 export function pipCount(board: Board, seat: Seat): number {
   let total = board.bar[seat] * BAR;
