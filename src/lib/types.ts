@@ -1,0 +1,46 @@
+import type { GameState, Seat } from "./game";
+
+export type RoomStatus = "lobby" | "playing" | "finished";
+
+export interface PublicPlayer {
+  id: string;
+  nickname: string;
+  isHost: boolean;
+  /** 0 = white, 1 = black, null = spectator. */
+  seat: Seat | null;
+}
+
+/** What GET /api/rooms/[code]/state returns. Backgammon has no hidden information, so everyone sees everything. */
+export interface RoomState {
+  room: {
+    id: string;
+    code: string;
+    name: string;
+    status: RoomStatus;
+    matchTo: number;
+    /** [white, black] */
+    score: [number, number];
+    hasPassword: boolean;
+    hostPlayerId: string | null;
+    version: number;
+  };
+  players: PublicPlayer[];
+  me: PublicPlayer;
+  game: GameState | null;
+}
+
+/** Item of the public room list (GET /api/rooms). */
+export interface RoomListItem {
+  code: string;
+  name: string;
+  status: RoomStatus;
+  matchTo: number;
+  hasPassword: boolean;
+  seated: number;
+  spectators: number;
+}
+
+export interface Session {
+  playerId: string;
+  token: string;
+}
