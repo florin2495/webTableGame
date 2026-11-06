@@ -20,6 +20,9 @@ Migrations are run by hand in the Supabase SQL editor; this table is the source 
 | --- | --- | --- |
 | `supabase/schema.sql` (initial) | yes (2026-11-06, verified) | `backgammon_rooms`, `backgammon_players` |
 
+Feedback (`POST /api/feedback`) writes to `hub_feedback` (owned by `florin2495/hailataticu-hub`, slug `backgammon`);
+this game must not be deployed before that table exists.
+
 Rules for schema changes: new numbered file in `supabase/migrations/`, additive when possible, folded into
 `supabase/schema.sql`. Code needing a migration is not pushed until the user ran it (verify by effect with the
 service key from `.env.local`). Never print or commit the keys in `.env.local`.
