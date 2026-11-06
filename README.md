@@ -17,10 +17,10 @@ Același stil și aceeași arhitectură ca Bingo (`florin2495/webBingoGame`): Ne
 1. Supabase (proiectul comun al jocurilor): rulează `supabase/schema.sql` în SQL Editor.
    Toate tabelele au prefixul `backgammon_`.
 2. `.env.local` după `.env.example` (aceleași chei ca la Bingo).
-3. `npm install && npm run dev` → http://localhost:3010
+3. `npm install && npm run dev` → http://localhost:3020
 
 ## Vercel
-Importă repo-ul, adaugă cele 3 variabile din `.env.example`, apoi domeniul `table.hailatat.icu`
+Importă repo-ul, adaugă cele 3 variabile din `.env.example`, apoi domeniul `backgammon.hailatat.icu`
 (Settings → Domains → Add Existing).
 
 ## Arhitectură
