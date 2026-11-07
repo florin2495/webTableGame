@@ -5,7 +5,7 @@
 ## Accounts and deploy
 - GitHub: personal account **florin2495** only (repo `florin2495/webTableGame`, private). Never the work account.
   Local git identity is pinned in `.git/config`.
-- Vercel project is connected by hand by the user. Domain: `backgammon.hailatat.icu` (listed in the hub
+- Vercel project is connected by hand by the user. Served at `games.hailatat.icu/backgammon` (`basePath`; the hub proxies it to `web-table-game.vercel.app`, listed in the hub
   `florin2495/hailataticu-hub`, `src/games.ts`).
 - Ask the user before pushing (= deploying), unless they explicitly say to deploy.
 - **Before every push, bump the patch version** in `package.json` (and `npm install --package-lock-only`).
