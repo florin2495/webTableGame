@@ -14,6 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Table",
+  applicationName: "Table",
+  appleWebApp: { capable: true, title: "Table", statusBarStyle: "default" },
   description: "Table (backgammon) în doi, pe telefon, cu prietenii. Încă doi pot privi.",
 };
 
