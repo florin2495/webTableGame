@@ -5,7 +5,7 @@ import { api } from "@/lib/client/api";
 import { MATCH_OPTIONS, MAX_MEMBERS, minutesLabel, ROOM_IDLE_MINUTES, seatName, type Seat } from "@/lib/game";
 import type { RoomState } from "@/lib/types";
 import { CheckerDot } from "./Dice";
-import { MemberList } from "./MemberList";
+import { MemberList, OfflineBadge } from "./MemberList";
 import { Button, Card, ErrorText } from "./ui";
 
 interface Props {
@@ -55,6 +55,7 @@ export function Lobby({ state, token, refresh }: Props) {
                 <CheckerDot seat={s} size={36} />
                 <span className="text-xs font-semibold uppercase text-zinc-500">{seatName(s)}</span>
                 <span className="min-h-6 truncate font-semibold">{p ? p.nickname : <span className="text-zinc-400">liber</span>}</span>
+                {p && <OfflineBadge connected={p.connected} />}
                 {!p && (
                   <Button variant="secondary" className="w-full" onClick={() => void sit(s)} disabled={busy}>
                     {me.seat === null ? "Ia locul" : "Mută-te aici"}

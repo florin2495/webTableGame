@@ -34,7 +34,7 @@ export const MATCH_DEFAULT = 3;
  * Lobby/finished rooms close after this long without anyone having them open. Every open room
  * page polls /state, which refreshes the timer (see PRESENCE_TOUCH_MS).
  */
-export const ROOM_IDLE_MINUTES = 2;
+export const ROOM_IDLE_MINUTES = 10;
 /** A game in progress survives a longer gap (phones lose connection, screens lock). */
 export const PLAYING_IDLE_MINUTES = 30;
 export const PRESENCE_TOUCH_MS = 20_000;

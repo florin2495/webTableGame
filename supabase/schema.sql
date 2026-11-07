@@ -41,12 +41,16 @@ create table if not exists public.backgammon_players (
   is_host    boolean not null default false,
   seat       smallint check (seat in (0, 1)),
   joined_at  timestamptz not null default now(),
-  kick_requested_at timestamptz                          -- pending host kick during a game (null = none)
+  kick_requested_at timestamptz,                         -- pending host kick during a game (null = none)
+  last_seen_at timestamptz not null default now(),       -- presence: disconnected after 45 s, see migrations/002
+  device_hash  text                                      -- sha256 of the browser's device id, see migrations/002
 );
 -- (databases created before the pending-kick feature: supabase/migrations/001_pending_kick.sql)
+-- (databases created before the rejoin-the-same-seat feature: supabase/migrations/002_reconnect.sql)
 create unique index if not exists backgammon_players_room_nickname_uq on public.backgammon_players (room_id, lower(nickname));
 create unique index if not exists backgammon_players_room_seat_uq on public.backgammon_players (room_id, seat) where seat is not null;
 create index if not exists backgammon_players_room_idx on public.backgammon_players (room_id);
+create index if not exists backgammon_players_room_seen_idx on public.backgammon_players (room_id, last_seen_at);
 
 do $$ begin
   alter table public.backgammon_rooms

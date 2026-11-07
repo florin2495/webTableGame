@@ -10,6 +10,8 @@ export interface PublicPlayer {
   seat: Seat | null;
   /** Ms left of a pending host kick (10 s countdown, game in progress); null = no pending kick. */
   kickRemainingMs: number | null;
+  /** Seen in the last 45 s (see lib/reconnect.ts). False = phone in the background, closed tab, no network. */
+  connected: boolean;
 }
 
 /** What GET /api/rooms/[code]/state returns. Backgammon has no hidden information, so everyone sees everything. */

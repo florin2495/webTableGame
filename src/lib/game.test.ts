@@ -288,8 +288,10 @@ describe("misc", () => {
   it("expires lobby rooms fast and playing rooms slowly", () => {
     const now = Date.now();
     const fiveMinAgo = new Date(now - 5 * 60_000);
-    expect(isRoomExpired("lobby", fiveMinAgo, now)).toBe(true);
-    expect(isRoomExpired("playing", fiveMinAgo, now)).toBe(false);
+    const fifteenMinAgo = new Date(now - 15 * 60_000);
+    expect(isRoomExpired("lobby", fiveMinAgo, now)).toBe(false);
+    expect(isRoomExpired("lobby", fifteenMinAgo, now)).toBe(true);
+    expect(isRoomExpired("playing", fifteenMinAgo, now)).toBe(false);
   });
 
   it("doubles enumerate quickly", () => {

@@ -23,7 +23,7 @@ import {
 import type { RoomState } from "@/lib/types";
 import { Board, STEP_MS, type Playback, type Spot } from "./Board";
 import { CheckerDot, Die } from "./Dice";
-import { MemberList } from "./MemberList";
+import { MemberList, OfflineBadge } from "./MemberList";
 import { Button, Card, ErrorText } from "./ui";
 
 interface Props {
@@ -110,6 +110,7 @@ function ScoreBar({ state, game, nick }: { state: RoomState; game: GameState; ni
                   {nick(s)}
                   {me.seat === s && <span className="font-normal text-zinc-500"> (tu)</span>}
                 </span>
+                <OfflineBadge connected={state.players.find((p) => p.seat === s)?.connected} />
                 <span className="block text-[11px] text-zinc-500">
                   {pipCount(game.board, s)} pips · {game.board.off[s]}/15 scoase
                 </span>
