@@ -18,11 +18,11 @@ export function MemberList({ state, token, refresh }: { state: RoomState; token:
   async function kick(id: string, nickname: string, seated: boolean) {
     const midGame =
       seated && room.status === "playing"
-        ? " Are 10 s să refuze; dacă nu, meciul se oprește și camera revine în lobby."
+        ? " Are 10 secunde să refuze; dacă nu, meciul se oprește și camera revine în lobby."
         : seated && room.status !== "lobby"
           ? " Meciul se oprește și camera revine în lobby."
           : "";
-    if (!window.confirm(`Scoți pe ${nickname} din cameră?${midGame}`)) return;
+    if (!window.confirm(`Scoți jucătorul ${nickname} din cameră?${midGame}`)) return;
     setBusy(id);
     setError("");
     try {

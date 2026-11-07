@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   title: "Table",
   applicationName: "Table",
   appleWebApp: { capable: true, title: "Table", statusBarStyle: "default" },
+  other: { "apple-mobile-web-app-capable": "yes" },
   description: "Table (backgammon) în doi, pe telefon, cu prietenii. Încă doi pot privi.",
 };
 
