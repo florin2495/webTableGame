@@ -12,9 +12,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 export const metadata: Metadata = {
   title: "Table",
   applicationName: "Table",
+  // Explicit + base-path-prefixed: metadata icon URLs are not prefixed automatically, and setting
+  // `icons` replaces the app/icon.svg link, so it is listed here too.
+  icons: {
+    icon: [{ url: `${BASE}/icon.svg`, type: "image/svg+xml" }],
+    apple: [{ url: `${BASE}/pwa-icon/apple-180.png`, sizes: "180x180", type: "image/png" }],
+  },
   appleWebApp: { capable: true, title: "Table", statusBarStyle: "default" },
   other: { "apple-mobile-web-app-capable": "yes" },
   description: "Table (backgammon) în doi, pe telefon, cu prietenii. Încă doi pot privi.",
