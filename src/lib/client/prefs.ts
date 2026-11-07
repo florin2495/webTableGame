@@ -58,3 +58,7 @@ export function useStringPref(key: string): string | null {
 
 export const PREF_SOUND = "table:pref:sound";
 export const PREF_NICKNAME = "table:pref:nickname";
+/** Roll automatically as soon as it is your turn (opt-in). */
+export const PREF_AUTO_ROLL = "table:pref:autoRoll";
+/** Confirm the turn right after the last move instead of after the 3-second countdown (opt-in). */
+export const PREF_AUTO_CONFIRM = "table:pref:autoConfirm";

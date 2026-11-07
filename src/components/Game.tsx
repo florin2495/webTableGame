@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/client/api";
-import { PREF_SOUND, readPref } from "@/lib/client/prefs";
+import { PREF_AUTO_CONFIRM, PREF_AUTO_ROLL, PREF_SOUND, readPref, useBoolPref } from "@/lib/client/prefs";
 import { playChecker, playDice, playWin, playYourTurn } from "@/lib/client/sound";
 import {
   applyMove,
@@ -21,7 +21,7 @@ import {
   type Seat,
 } from "@/lib/game";
 import type { RoomState } from "@/lib/types";
-import { Board, type Playback, type Spot } from "./Board";
+import { Board, STEP_MS, type Playback, type Spot } from "./Board";
 import { CheckerDot, Die } from "./Dice";
 import { MemberList } from "./MemberList";
 import { Button, Card, ErrorText } from "./ui";
@@ -34,6 +34,9 @@ interface Props {
 }
 
 const soundOn = () => readPref(PREF_SOUND) !== "0";
+
+/** After the last move the turn confirms itself unless the player presses "Anulează". */
+const AUTO_CONFIRM_MS = 3000;
 
 const sameBoard = (a: BoardData, b: BoardData) =>
   a.points.every((n, i) => n === b.points[i]) && a.bar[0] === b.bar[0] && a.bar[1] === b.bar[1] && a.off[0] === b.off[0] && a.off[1] === b.off[1];
@@ -203,6 +206,46 @@ function Play({ state, game, token, refresh, nick, remotePlayback }: Props & { n
     }
   }
 
+  const [autoRoll] = useBoolPref(PREF_AUTO_ROLL, false);
+  const [autoConfirm] = useBoolPref(PREF_AUTO_CONFIRM, false);
+
+  // Auto-roll: once per server state (Play is keyed by version), after the opponent's slide finished.
+  // After a failed request the automation stops and the manual buttons take over (no retry loop).
+  const needsRoll = myTurn && game.phase === "roll" && autoRoll && !error;
+  const rollDelay = 500 + (remotePlayback?.moves.length ?? 0) * STEP_MS;
+  useEffect(() => {
+    if (!needsRoll || busy) return;
+    const t = window.setTimeout(() => {
+      if (soundOn()) playDice();
+      void send("roll");
+    }, rollDelay);
+    return () => window.clearTimeout(t);
+    // `send` is recreated every render; the timer only needs the values below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needsRoll, busy, rollDelay]);
+
+  // Auto-confirm: every die used -> confirm after AUTO_CONFIRM_MS, or right after the last slide when the
+  // "confirm immediately" setting is on. "Anulează" changes `moves`, which cancels the timer.
+  const doneKey = progress?.done && moves.length > 0 && !error ? JSON.stringify(moves) : null;
+  const lastSlideMs = (batches.at(-1)?.length ?? 0) * STEP_MS + 150;
+  const confirmDelay = autoConfirm ? lastSlideMs : AUTO_CONFIRM_MS;
+  const [countdown, setCountdown] = useState<{ key: string; left: number } | null>(null);
+  useEffect(() => {
+    if (!doneKey || busy) return;
+    const started = Date.now();
+    const tick = () => setCountdown({ key: doneKey, left: Math.max(0, Math.ceil((confirmDelay - (Date.now() - started)) / 1000)) });
+    const first = window.setTimeout(tick, 0);
+    const interval = window.setInterval(tick, 250);
+    const fire = window.setTimeout(() => void send("move", { moves: JSON.parse(doneKey) as Move[] }), confirmDelay);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(interval);
+      window.clearTimeout(fire);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doneKey, busy, confirmDelay]);
+  const secondsLeft = !autoConfirm && countdown && countdown.key === doneKey && !busy ? countdown.left : null;
+
   // Last turn highlight + caption (only once the current player has not started moving).
   const last = game.lastTurn;
   const recent = new Set<number>();
@@ -247,7 +290,17 @@ function Play({ state, game, token, refresh, nick, remotePlayback }: Props & { n
 
         <TurnCaption state={state} game={game} nick={nick} myTurn={myTurn} progressDone={progress?.done ?? false} />
 
-        {myTurn && game.phase === "roll" && (
+        {secondsLeft !== null && (
+          <p role="status" className="text-center text-sm font-semibold text-amber-700 dark:text-amber-400">
+            Se confirmă automat în {secondsLeft} s… Apasă „Anulează” ca să schimbi.
+          </p>
+        )}
+
+        {needsRoll && (
+          <p className="text-center text-xs text-zinc-500">🎲 Zarurile se aruncă automat…</p>
+        )}
+
+        {myTurn && game.phase === "roll" && !needsRoll && (
           <Button className="w-full max-w-xs text-lg" onClick={() => void send("roll").then(() => soundOn() && playDice())} disabled={busy}>
             🎲 Aruncă zarurile
           </Button>

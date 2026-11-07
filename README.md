@@ -11,6 +11,8 @@ Același stil și aceeași arhitectură ca Bingo (`florin2495/webBingoGame`): Ne
 - Reguli complete: lovire, bară, intrare, dubla de 4 ori, obligația de a folosi cât mai multe zaruri
   (și zarul mare când merge doar unul), scoaterea pieselor. Zarurile se dau pe server.
 - Tura se joacă local (cu Anulează) și se trimite întreagă la „Confirmă”. Serverul o validează din nou.
+- Setări pe dispozitiv: sunete, aruncă zarurile automat, confirmă tura imediat. Implicit, după ultima mutare
+  tura se confirmă singură în 3 secunde dacă nu apeși „Anulează”.
 - Cedare, joc următor, înapoi în lobby, kick, ieșire, închidere automată la inactivitate.
 
 ## Setup
