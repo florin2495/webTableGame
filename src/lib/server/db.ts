@@ -46,6 +46,8 @@ export interface PlayerRow {
   is_host: boolean;
   seat: Seat | null;
   joined_at: string;
+  /** Pending host kick during a running game (null = none). */
+  kick_requested_at: string | null;
 }
 
-export const PLAYER_COLUMNS = "id, room_id, nickname, is_host, seat, joined_at";
+export const PLAYER_COLUMNS = "id, room_id, nickname, is_host, seat, joined_at, kick_requested_at";

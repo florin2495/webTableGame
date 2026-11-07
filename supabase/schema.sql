@@ -40,8 +40,10 @@ create table if not exists public.backgammon_players (
   token_hash text not null unique,
   is_host    boolean not null default false,
   seat       smallint check (seat in (0, 1)),
-  joined_at  timestamptz not null default now()
+  joined_at  timestamptz not null default now(),
+  kick_requested_at timestamptz                          -- pending host kick during a game (null = none)
 );
+-- (databases created before the pending-kick feature: supabase/migrations/001_pending_kick.sql)
 create unique index if not exists backgammon_players_room_nickname_uq on public.backgammon_players (room_id, lower(nickname));
 create unique index if not exists backgammon_players_room_seat_uq on public.backgammon_players (room_id, seat) where seat is not null;
 create index if not exists backgammon_players_room_idx on public.backgammon_players (room_id);

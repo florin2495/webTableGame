@@ -1,9 +1,11 @@
 import "server-only";
+import { kickRemainingMs } from "@/lib/kick";
 import { isRoomExpired, minutesLabel, ROOM_IDLE_MINUTES, PLAYING_IDLE_MINUTES } from "@/lib/game";
 import type { PublicPlayer, RoomState } from "@/lib/types";
 import { hashToken } from "./crypto";
 import { db, PLAYER_COLUMNS, PLAYERS, ROOM_COLUMNS, ROOMS, type PlayerRow, type RoomRow } from "./db";
 import { fail } from "./http";
+import { enforceExpiredKicks } from "./kick";
 
 const GONE = `Camera nu există sau a fost închisă după ${minutesLabel(ROOM_IDLE_MINUTES)} de inactivitate.`;
 
@@ -48,7 +50,8 @@ export async function touchRoom(roomId: string): Promise<void> {
 export async function requireMember(req: Request, code: string): Promise<{ room: RoomRow; player: PlayerRow }> {
   const token = req.headers.get("x-player-token");
   if (!token || token.length > 200) fail(401, "Nu ești în această cameră.");
-  const room = await getRoomByCode(code);
+  // Pending kicks are enforced lazily (no timers on serverless): before the caller's membership is used.
+  const room = await enforceExpiredKicks(await getRoomByCode(code));
   const { data, error } = await db()
     .from(PLAYERS)
     .select(PLAYER_COLUMNS)
@@ -90,6 +93,16 @@ export async function listPlayers(roomId: string): Promise<PlayerRow[]> {
   return (data ?? []) as PlayerRow[];
 }
 
+/** Clears every pending kick of the room (new game, back to the lobby, match abandoned). */
+export async function clearPendingKicks(roomId: string): Promise<void> {
+  const { error } = await db()
+    .from(PLAYERS)
+    .update({ kick_requested_at: null })
+    .eq("room_id", roomId)
+    .not("kick_requested_at", "is", null);
+  if (error) throw error;
+}
+
 /**
  * Updates the room only if nobody changed it since `room` was read (optimistic concurrency).
  * Bumps `version`. Fails with 409 when another request won the race.
@@ -106,16 +119,18 @@ export async function updateRoom(room: RoomRow, patch: Partial<RoomRow>): Promis
   if (!data || data.length === 0) fail(409, "Jocul s-a schimbat între timp. Mai încearcă o dată.");
 }
 
-const toPublic = (p: PlayerRow): PublicPlayer => ({
+const toPublic = (p: PlayerRow, now: number): PublicPlayer => ({
   id: p.id,
   nickname: p.nickname,
   isHost: p.is_host,
   seat: p.seat,
+  kickRemainingMs: kickRemainingMs(p.kick_requested_at, now),
 });
 
 export async function buildState(room: RoomRow, me: PlayerRow): Promise<RoomState> {
   const players = await listPlayers(room.id);
   // Seated players first (white, black), then spectators in join order.
+  const now = Date.now();
   const ordered = [...players].sort((a, b) => (a.seat ?? 9) - (b.seat ?? 9));
   return {
     room: {
@@ -129,8 +144,8 @@ export async function buildState(room: RoomRow, me: PlayerRow): Promise<RoomStat
       hostPlayerId: room.host_player_id,
       version: room.version,
     },
-    players: ordered.map(toPublic),
-    me: toPublic(me),
+    players: ordered.map((p) => toPublic(p, now)),
+    me: toPublic(me, now),
     game: room.game,
   };
 }

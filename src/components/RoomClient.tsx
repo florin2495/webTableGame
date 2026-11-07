@@ -18,6 +18,7 @@ import { minutesLabel, NICKNAME_MAX, ROOM_IDLE_MINUTES } from "@/lib/game";
 import type { RoomState } from "@/lib/types";
 import { FeedbackButton } from "./FeedbackButton";
 import { Game } from "./Game";
+import { KickModal, useKickWatcher } from "./KickUi";
 import { Lobby } from "./Lobby";
 import { SettingsPanel } from "./SettingsPanel";
 import { Button, Card, ErrorText, Field } from "./ui";
@@ -103,6 +104,7 @@ function useRoomState(code: string, token: string) {
 
 function Room({ code, token }: { code: string; token: string }) {
   const { state, error, missing, refresh } = useRoomState(code, token);
+  useKickWatcher(state, refresh);
 
   if (missing) {
     return (
@@ -141,6 +143,10 @@ function Room({ code, token }: { code: string; token: string }) {
       )}
       <SettingsPanel />
       <LeaveButton state={state} token={token} />
+      {/* Sibling overlay: the game underneath (auto-confirm countdown included) keeps running untouched. */}
+      {state.me.kickRemainingMs !== null && (
+        <KickModal code={state.room.code} token={token} remainingMs={state.me.kickRemainingMs} refresh={refresh} />
+      )}
     </main>
   );
 }

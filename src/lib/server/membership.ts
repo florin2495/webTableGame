@@ -1,7 +1,7 @@
 import "server-only";
 import { notifyRoom } from "./broadcast";
 import { db, PLAYERS, ROOMS, type RoomRow } from "./db";
-import { listPlayers } from "./room";
+import { clearPendingKicks, listPlayers } from "./room";
 
 /**
  * Removes a member from a room (used by both "leave" and the host's "kick").
@@ -47,6 +47,8 @@ export async function removePlayer(room: RoomRow, playerId: string, reason: stri
 
   const { error: deleteError } = await db().from(PLAYERS).delete().eq("id", playerId);
   if (deleteError) throw deleteError;
+  // Match abandoned -> back to the lobby: no game left to be kicked out of.
+  if (update.status === "lobby") await clearPendingKicks(room.id);
 
   await notifyRoom(room.id, reason);
   return { roomClosed: false };

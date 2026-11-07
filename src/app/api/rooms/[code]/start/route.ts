@@ -2,7 +2,7 @@ import { newGame } from "@/lib/game";
 import { notifyRoom } from "@/lib/server/broadcast";
 import { randomDie } from "@/lib/server/crypto";
 import { fail, handle } from "@/lib/server/http";
-import { listPlayers, requireHost, requireMember, requireStatus, updateRoom } from "@/lib/server/room";
+import { listPlayers, requireHost, requireMember, requireStatus, updateRoom, clearPendingKicks } from "@/lib/server/room";
 
 // POST /api/rooms/[code]/start - host, lobby, both seats taken. Starts a new match.
 export async function POST(req: Request, ctx: RouteContext<"/api/rooms/[code]/start">) {
@@ -15,6 +15,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/rooms/[code]/st
     if (!seats.has(0) || !seats.has(1)) fail(409, "Ai nevoie de doi jucători așezați (Alb și Negru).");
 
     await updateRoom(room, { status: "playing", score_white: 0, score_black: 0, game: newGame(1, randomDie) });
+    await clearPendingKicks(room.id);
     await notifyRoom(room.id, "game_started");
     return { ok: true };
   });

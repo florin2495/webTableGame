@@ -8,6 +8,8 @@ export interface PublicPlayer {
   isHost: boolean;
   /** 0 = white, 1 = black, null = spectator. */
   seat: Seat | null;
+  /** Ms left of a pending host kick (10 s countdown, game in progress); null = no pending kick. */
+  kickRemainingMs: number | null;
 }
 
 /** What GET /api/rooms/[code]/state returns. Backgammon has no hidden information, so everyone sees everything. */

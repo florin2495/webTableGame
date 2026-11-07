@@ -5,6 +5,7 @@ import { api } from "@/lib/client/api";
 import { seatName } from "@/lib/game";
 import type { RoomState } from "@/lib/types";
 import { CheckerDot } from "./Dice";
+import { PendingKickBadge } from "./KickUi";
 import { ErrorText } from "./ui";
 
 /** Everyone in the room: seated players with their colour, then spectators. Host can kick. */
@@ -15,7 +16,12 @@ export function MemberList({ state, token, refresh }: { state: RoomState; token:
   const [error, setError] = useState("");
 
   async function kick(id: string, nickname: string, seated: boolean) {
-    const midGame = seated && room.status !== "lobby" ? " Meciul se oprește și camera revine în lobby." : "";
+    const midGame =
+      seated && room.status === "playing"
+        ? " Are 10 s să refuze; dacă nu, meciul se oprește și camera revine în lobby."
+        : seated && room.status !== "lobby"
+          ? " Meciul se oprește și camera revine în lobby."
+          : "";
     if (!window.confirm(`Scoți pe ${nickname} din cameră?${midGame}`)) return;
     setBusy(id);
     setError("");
@@ -43,6 +49,7 @@ export function MemberList({ state, token, refresh }: { state: RoomState; token:
               {p.isHost && (
                 <span className="rounded bg-zinc-200 px-1.5 text-[10px] font-semibold uppercase dark:bg-zinc-800">host</span>
               )}
+              {p.kickRemainingMs !== null && <PendingKickBadge remainingMs={p.kickRemainingMs} />}
             </span>
             <span className="flex shrink-0 items-center gap-2">
               <span className="text-xs text-zinc-500">{p.seat !== null ? seatName(p.seat) : "spectator"}</span>
@@ -50,7 +57,7 @@ export function MemberList({ state, token, refresh }: { state: RoomState; token:
                 <button
                   type="button"
                   onClick={() => void kick(p.id, p.nickname, p.seat !== null)}
-                  disabled={busy !== null}
+                  disabled={busy !== null || p.kickRemainingMs !== null}
                   className="min-h-8 rounded-md border border-rose-300 px-2 text-xs font-semibold text-rose-600 disabled:opacity-40 dark:border-rose-800 dark:text-rose-400"
                   aria-label={`Scoate pe ${p.nickname}`}
                 >

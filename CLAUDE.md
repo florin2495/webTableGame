@@ -20,6 +20,7 @@ Migrations are run by hand in the Supabase SQL editor; this table is the source 
 | Migration | Applied to the live DB | Notes |
 | --- | --- | --- |
 | `supabase/schema.sql` (initial) | yes (2026-11-06, verified) | `backgammon_rooms`, `backgammon_players` |
+| `supabase/migrations/001_pending_kick.sql` | **not yet applied** | `backgammon_players.kick_requested_at timestamptz` (kick during a game waits 10 s, can be ignored). Code needs it: do not push before it is run. |
 
 Feedback (`POST /api/feedback`) writes to `hub_feedback` (owned by `florin2495/hailataticu-hub`, slug `backgammon`);
 this game must not be deployed before that table exists.
