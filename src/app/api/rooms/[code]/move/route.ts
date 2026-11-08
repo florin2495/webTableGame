@@ -2,6 +2,7 @@ import { commitTurn, parseMoves } from "@/lib/game";
 import { notifyRoom } from "@/lib/server/broadcast";
 import { fail, handle, readJson } from "@/lib/server/http";
 import { finishGamePatch } from "@/lib/server/match";
+import { reportRound } from "@/lib/server/leaderboard";
 import { requireMember, requireSeated, requireStatus, updateRoom } from "@/lib/server/room";
 
 // POST /api/rooms/[code]/move  { moves: [{from, die}] } - plays the whole turn at once.
@@ -23,6 +24,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/rooms/[code]/mo
     if (typeof next === "string") fail(409, next);
 
     await updateRoom(room, next.phase === "over" ? finishGamePatch(room, next) : { game: next });
+    if (next.phase === "over") await reportRound(room, next, room.rounds_played + 1);
     await notifyRoom(room.id, next.phase === "over" ? "game_over" : "moved");
     return { ok: true };
   });
