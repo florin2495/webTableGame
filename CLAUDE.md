@@ -22,6 +22,13 @@ Migrations are run by hand in the Supabase SQL editor; this table is the source 
 | `supabase/schema.sql` (initial) | yes (2026-11-06, verified) | `backgammon_rooms`, `backgammon_players` |
 | `supabase/migrations/001_pending_kick.sql` | yes (2026-11-07, verified) | `backgammon_players.kick_requested_at timestamptz` (kick during a game waits 10 s, can be ignored). Code needs it: do not push before it is run. |
 | `supabase/migrations/002_reconnect.sql` | yes (2026-11-07, verified: service role 200, anon 401) | `backgammon_players.last_seen_at`, `device_hash` + index (rejoin the same seat). Code needs it: do not push before it is run. |
+| `supabase/migrations/003_queue_leaderboard.sql` | **NOT applied yet** | `backgammon_players.queued_at` (spectator queue), `backgammon_rooms.rounds_played` (leaderboard round_no). Code needs it: do not push before it is run. Leaderboard reporting also needs the hub's `002_hub_leaderboard.sql` (not applied at time of writing). |
+
+Seat order / spectators: `POST /reorder` (host, lobby only; `order` = the seated players, first = White) and
+`POST /queue` (spectator toggle, "Intră la runda următoare"; queued spectators take seats freed in the lobby, in
+queue order - see `src/lib/server/queue.ts`). Max 16 spectators (`MAX_SPECTATORS`).
+Leaderboard (`src/lib/server/leaderboard.ts`): each finished game (move or resign) is one round, `round_no` =
+`backgammon_rooms.rounds_played`; best effort, never breaks the game.
 
 Rejoin the same seat (`src/lib/reconnect.ts`): every member request stamps `last_seen_at` (at most every 10 s);
 re-joining with an existing nickname reclaims that place (same player id and seat, new token) from the same device
