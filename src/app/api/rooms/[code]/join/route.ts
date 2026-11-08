@@ -1,4 +1,4 @@
-import { MAX_MEMBERS, NICKNAME_MAX } from "@/lib/game";
+import { MAX_SPECTATORS, NICKNAME_MAX } from "@/lib/game";
 import { seatBusyMessage, seatClaim } from "@/lib/reconnect";
 import { notifyRoom } from "@/lib/server/broadcast";
 import { hashDeviceId, hashToken, newPlayerToken, verifyPassword } from "@/lib/server/crypto";
@@ -20,7 +20,7 @@ interface MemberRow {
 // A nickname that already has a place in the room (seat or spectator) reclaims it (same player id, same seat,
 // new token) when the request comes from the same device or the place has been disconnected for 45 s - also
 // mid-game. Otherwise: in the lobby the newcomer takes a free seat if there is one; else (or while a game runs)
-// they join as a spectator. At most MAX_MEMBERS people per room.
+// they join as a spectator. At most MAX_SPECTATORS spectators per room.
 export async function POST(req: Request, ctx: RouteContext<"/api/rooms/[code]/join">) {
   return handle(async () => {
     const { code } = await ctx.params;
@@ -65,10 +65,11 @@ export async function POST(req: Request, ctx: RouteContext<"/api/rooms/[code]/jo
       return { code: room.code, playerId: existing.id, token, seat: existing.seat };
     }
 
-    if (members.length >= MAX_MEMBERS) fail(409, `Camera e plină (2 jucători + ${MAX_MEMBERS - 2} spectatori).`);
-
     const taken = new Set(members.map((m) => m.seat));
     const freeSeat = room.status === "lobby" ? (([0, 1] as const).find((s) => !taken.has(s)) ?? null) : null;
+    if (freeSeat === null && members.filter((m) => m.seat === null).length >= MAX_SPECTATORS) {
+      fail(409, `Camera e plină: sunt deja ${MAX_SPECTATORS} spectatori.`);
+    }
 
     const token = newPlayerToken();
     const { data, error } = await db()

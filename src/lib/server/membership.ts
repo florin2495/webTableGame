@@ -1,6 +1,7 @@
 import "server-only";
 import { notifyRoom } from "./broadcast";
 import { db, PLAYERS, ROOMS, type RoomRow } from "./db";
+import { promoteQueued } from "./queue";
 import { clearPendingKicks, listPlayers } from "./room";
 
 /**
@@ -49,6 +50,10 @@ export async function removePlayer(room: RoomRow, playerId: string, reason: stri
   if (deleteError) throw deleteError;
   // Match abandoned -> back to the lobby: no game left to be kicked out of.
   if (update.status === "lobby") await clearPendingKicks(room.id);
+  // A seat was freed in the lobby: the first queued spectator takes it.
+  if (leaving?.seat !== null && leaving?.seat !== undefined && (room.status === "lobby" || update.status === "lobby")) {
+    await promoteQueued(room.id);
+  }
 
   await notifyRoom(room.id, reason);
   return { roomClosed: false };

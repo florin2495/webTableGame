@@ -23,7 +23,7 @@ import {
 import type { RoomState } from "@/lib/types";
 import { Board, STEP_MS, type Playback, type Spot } from "./Board";
 import { CheckerDot, Die } from "./Dice";
-import { MemberList, OfflineBadge } from "./MemberList";
+import { MemberList, OfflineBadge, QueueButton } from "./MemberList";
 import { Button, Card, ErrorText } from "./ui";
 
 interface Props {
@@ -82,6 +82,7 @@ export function Game({ state, game, token, refresh }: Props) {
           👁 Ești spectator. Vezi tabla din partea lui {nick(0)} (Alb).
         </p>
       )}
+      <QueueButton state={state} token={token} refresh={refresh} />
       <Card>
         <h2 className="mb-1 font-bold">În cameră</h2>
         <MemberList state={state} token={token} refresh={refresh} />

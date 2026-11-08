@@ -6,7 +6,7 @@ import { seatName } from "@/lib/game";
 import type { RoomState } from "@/lib/types";
 import { CheckerDot } from "./Dice";
 import { PendingKickBadge } from "./KickUi";
-import { ErrorText } from "./ui";
+import { Button, ErrorText } from "./ui";
 
 /** Shown next to a member not seen for 45 s (phone in the background, closed tab, no network). */
 export function OfflineBadge({ connected }: { connected: boolean | undefined }) {
@@ -15,6 +15,36 @@ export function OfflineBadge({ connected }: { connected: boolean | undefined }) 
     <span className="shrink-0 rounded bg-zinc-200 px-1.5 text-[10px] font-semibold uppercase text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
       deconectat
     </span>
+  );
+}
+
+/** Spectator only: toggles "Intră la runda următoare" (queue for the next free seat). */
+export function QueueButton({ state, token, refresh }: { state: RoomState; token: string; refresh: () => Promise<void> }) {
+  const { me, room } = state;
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  if (me.seat !== null) return null;
+
+  async function toggle() {
+    setBusy(true);
+    setError("");
+    try {
+      await api(`/api/rooms/${room.code}/queue`, { token, body: {} });
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Eroare.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <Button variant={me.queued ? "secondary" : "primary"} className="w-full" onClick={() => void toggle()} disabled={busy}>
+        {me.queued ? `În coadă (locul ${me.queuePosition ?? "?"}) - renunță` : "Intră la runda următoare"}
+      </Button>
+      <ErrorText>{error}</ErrorText>
+    </div>
   );
 }
 
@@ -56,6 +86,11 @@ export function MemberList({ state, token, refresh }: { state: RoomState; token:
                 {p.nickname}
                 {p.id === me.id && <span className="text-zinc-500"> (tu)</span>}
               </span>
+              {p.queued && (
+                <span className="rounded bg-indigo-100 px-1.5 text-[10px] font-semibold uppercase text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                  coadă {p.queuePosition}
+                </span>
+              )}
               {p.isHost && (
                 <span className="rounded bg-zinc-200 px-1.5 text-[10px] font-semibold uppercase dark:bg-zinc-800">host</span>
               )}

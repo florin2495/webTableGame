@@ -1,5 +1,6 @@
 import "server-only";
 import { kickRemainingMs } from "@/lib/kick";
+import { queuePosition } from "@/lib/queue";
 import { isConnected, LAST_SEEN_TOUCH_MS } from "@/lib/reconnect";
 import { isRoomExpired, minutesLabel, ROOM_IDLE_MINUTES, PLAYING_IDLE_MINUTES } from "@/lib/game";
 import type { PublicPlayer, RoomState } from "@/lib/types";
@@ -131,19 +132,22 @@ export async function updateRoom(room: RoomRow, patch: Partial<RoomRow>): Promis
   if (!data || data.length === 0) fail(409, "Jocul s-a schimbat între timp. Mai încearcă o dată.");
 }
 
-const toPublic = (p: PlayerRow, now: number): PublicPlayer => ({
+const toPublic = (p: PlayerRow, now: number, spectators: PlayerRow[]): PublicPlayer => ({
   id: p.id,
   nickname: p.nickname,
   isHost: p.is_host,
   seat: p.seat,
   kickRemainingMs: kickRemainingMs(p.kick_requested_at, now),
   connected: isConnected(p.last_seen_at, now),
+  queued: p.seat === null && p.queued_at !== null,
+  queuePosition: p.seat === null ? queuePosition(spectators, p.id) : null,
 });
 
 export async function buildState(room: RoomRow, me: PlayerRow): Promise<RoomState> {
   const players = await listPlayers(room.id);
   // Seated players first (white, black), then spectators in join order.
   const now = Date.now();
+  const spectators = players.filter((p) => p.seat === null);
   const ordered = [...players].sort((a, b) => (a.seat ?? 9) - (b.seat ?? 9));
   return {
     room: {
@@ -157,8 +161,8 @@ export async function buildState(room: RoomRow, me: PlayerRow): Promise<RoomStat
       hostPlayerId: room.host_player_id,
       version: room.version,
     },
-    players: ordered.map((p) => toPublic(p, now)),
-    me: toPublic(me, now),
+    players: ordered.map((p) => toPublic(p, now, spectators)),
+    me: toPublic(me, now, spectators),
     game: room.game,
   };
 }

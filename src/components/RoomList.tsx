@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { api, parseSession, readSessionRaw } from "@/lib/client/api";
-import { MAX_MEMBERS } from "@/lib/game";
+import { MAX_SPECTATORS } from "@/lib/game";
 import type { RoomListItem } from "@/lib/types";
 
 const POLL_MS = 10_000;
@@ -56,8 +56,8 @@ export function RoomList({
       {rooms.map((r) => {
         const mine = parseSession(readSessionRaw(r.code)) !== null;
         const active = selected === r.code;
-        const full = r.seated + r.spectators >= MAX_MEMBERS;
         const canPlay = r.status === "lobby" && r.seated < 2;
+        const full = !canPlay && r.spectators >= MAX_SPECTATORS;
         const action = mine ? "Reintră" : full ? "Plină" : canPlay ? "Joacă" : "Privește";
         return (
           <li key={r.code}>

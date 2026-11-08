@@ -1,5 +1,6 @@
 import { notifyRoom } from "@/lib/server/broadcast";
 import { handle } from "@/lib/server/http";
+import { promoteQueued } from "@/lib/server/queue";
 import { requireHost, requireMember, requireStatus, updateRoom, clearPendingKicks } from "@/lib/server/room";
 
 // POST /api/rooms/[code]/lobby - host ends the match and returns everyone to the lobby
@@ -12,6 +13,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/rooms/[code]/lo
     requireStatus(room, "finished");
     await updateRoom(room, { status: "lobby", game: null, score_white: 0, score_black: 0 });
     await clearPendingKicks(room.id);
+    await promoteQueued(room.id);
     await notifyRoom(room.id, "back_to_lobby");
     return { ok: true };
   });

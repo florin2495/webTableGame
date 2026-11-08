@@ -25,7 +25,8 @@ create table if not exists public.backgammon_rooms (
   host_player_id   uuid,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),
-  last_activity_at timestamptz not null default now()
+  last_activity_at timestamptz not null default now(),
+  rounds_played    integer not null default 0              -- finished games, round_no for hub_leaderboard_rounds, see migrations/003
 );
 create index if not exists backgammon_rooms_status_activity_idx on public.backgammon_rooms (status, last_activity_at);
 
@@ -43,10 +44,12 @@ create table if not exists public.backgammon_players (
   joined_at  timestamptz not null default now(),
   kick_requested_at timestamptz,                         -- pending host kick during a game (null = none)
   last_seen_at timestamptz not null default now(),       -- presence: disconnected after 45 s, see migrations/002
-  device_hash  text                                      -- sha256 of the browser's device id, see migrations/002
+  device_hash  text,                                     -- sha256 of the browser's device id, see migrations/002
+  queued_at    timestamptz                               -- spectator waiting for a free seat (null = not queued), see migrations/003
 );
 -- (databases created before the pending-kick feature: supabase/migrations/001_pending_kick.sql)
 -- (databases created before the rejoin-the-same-seat feature: supabase/migrations/002_reconnect.sql)
+-- (databases created before the spectator queue / leaderboard: supabase/migrations/003_queue_leaderboard.sql)
 create unique index if not exists backgammon_players_room_nickname_uq on public.backgammon_players (room_id, lower(nickname));
 create unique index if not exists backgammon_players_room_seat_uq on public.backgammon_players (room_id, seat) where seat is not null;
 create index if not exists backgammon_players_room_idx on public.backgammon_players (room_id);

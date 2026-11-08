@@ -12,6 +12,10 @@ export interface PublicPlayer {
   kickRemainingMs: number | null;
   /** Seen in the last 45 s (see lib/reconnect.ts). False = phone in the background, closed tab, no network. */
   connected: boolean;
+  /** Spectator waiting for a seat ("Intră la runda următoare"). Always false for seated players. */
+  queued: boolean;
+  /** 1-based place in the queue, null when not queued. */
+  queuePosition: number | null;
 }
 
 /** What GET /api/rooms/[code]/state returns. Backgammon has no hidden information, so everyone sees everything. */

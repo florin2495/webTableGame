@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { api } from "@/lib/client/api";
-import { MATCH_OPTIONS, MAX_MEMBERS, minutesLabel, ROOM_IDLE_MINUTES, seatName, type Seat } from "@/lib/game";
+import { MATCH_OPTIONS, MAX_MEMBERS, MAX_SPECTATORS, minutesLabel, ROOM_IDLE_MINUTES, seatName, type Seat } from "@/lib/game";
 import type { RoomState } from "@/lib/types";
 import { CheckerDot } from "./Dice";
-import { MemberList, OfflineBadge } from "./MemberList";
+import { MemberList, OfflineBadge, QueueButton } from "./MemberList";
 import { Button, Card, ErrorText } from "./ui";
 
 interface Props {
@@ -37,6 +37,10 @@ export function Lobby({ state, token, refresh }: Props) {
   }
 
   const sit = (seat: Seat | null) => run(() => api(`${base}/seat`, { token, body: { seat } }));
+  const swapColours = () => {
+    const order = [bySeat(1), bySeat(0)].map((p) => p?.id ?? "");
+    return run(() => api(`${base}/reorder`, { token, body: { order } }));
+  };
   const start = () => run(() => api(`${base}/start`, { token, body: {} }));
 
   return (
@@ -70,10 +74,20 @@ export function Lobby({ state, token, refresh }: Props) {
             );
           })}
         </div>
+        {isHost && bothSeated && (
+          <Button variant="secondary" className="mt-3 w-full" onClick={() => void swapColours()} disabled={busy}>
+            ⇄ Schimbă culorile (cine e Alb / Negru)
+          </Button>
+        )}
         {me.seat === null && (
           <p className="mt-3 text-center text-sm text-zinc-500">
-            Ești spectator. Poți lua un loc liber cât camera e în lobby.
+            Ești spectator. Poți lua un loc liber cât camera e în lobby sau intra în coadă pentru runda următoare.
           </p>
+        )}
+        {me.seat === null && (
+          <div className="mt-2">
+            <QueueButton state={state} token={token} refresh={refresh} />
+          </div>
         )}
         {isHost ? (
           <>
@@ -107,7 +121,7 @@ export function Lobby({ state, token, refresh }: Props) {
         </div>
         <MemberList state={state} token={token} refresh={refresh} />
         <p className="mt-2 text-center text-xs text-zinc-500">
-          2 jucători + 2 spectatori. Spectatorii pot intra și în timpul jocului. Camera se închide după{" "}
+          2 jucători + până la {MAX_SPECTATORS} spectatori. Spectatorii pot intra și în timpul jocului. Camera se închide după{" "}
           {minutesLabel(ROOM_IDLE_MINUTES)} în care nimeni nu o are deschisă.
         </p>
       </Card>

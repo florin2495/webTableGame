@@ -26,7 +26,8 @@ export const BAR = 25;
 export const CHECKERS = 15;
 
 export const NICKNAME_MAX = 10;
-export const MAX_MEMBERS = 4; // 2 players + 2 spectators
+export const MAX_SPECTATORS = 16;
+export const MAX_MEMBERS = 2 + MAX_SPECTATORS;
 export const MATCH_OPTIONS = [1, 3, 5, 7] as const;
 export const MATCH_DEFAULT = 3;
 

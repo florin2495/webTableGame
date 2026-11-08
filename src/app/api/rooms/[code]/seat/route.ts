@@ -1,6 +1,7 @@
 import { notifyRoom } from "@/lib/server/broadcast";
 import { db, PLAYERS } from "@/lib/server/db";
 import { fail, handle, isUniqueViolation, readJson } from "@/lib/server/http";
+import { promoteQueued } from "@/lib/server/queue";
 import { requireMember, requireStatus, touchRoom } from "@/lib/server/room";
 
 // POST /api/rooms/[code]/seat  { seat: 0 | 1 | null } - lobby only: sit down on a free seat or stand up.
@@ -18,6 +19,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/rooms/[code]/se
     if (isUniqueViolation(error)) fail(409, "Locul e deja ocupat.");
     if (error) throw error;
 
+    if (seat === null) await promoteQueued(room.id);
     await touchRoom(room.id);
     await notifyRoom(room.id, "seat_changed");
     return { ok: true };

@@ -34,10 +34,12 @@ export interface RoomRow {
   version: number;
   host_player_id: string | null;
   last_activity_at: string;
+  /** Finished games so far (needs migration 003): round_no for the leaderboard. */
+  rounds_played: number;
 }
 
 export const ROOM_COLUMNS =
-  "id, code, name, password_hash, status, match_to, score_white, score_black, game, version, host_player_id, last_activity_at";
+  "id, code, name, password_hash, status, match_to, score_white, score_black, game, version, host_player_id, last_activity_at, rounds_played";
 
 export interface PlayerRow {
   id: string;
@@ -50,7 +52,9 @@ export interface PlayerRow {
   kick_requested_at: string | null;
   /** Presence stamp, touched by requireMember. Needs migration 002_reconnect.sql. */
   last_seen_at: string;
+  /** Spectator waiting for a seat (needs migration 003); null = not queued. */
+  queued_at: string | null;
 }
 
 /** Never add token_hash / device_hash here: these rows feed the public state. */
-export const PLAYER_COLUMNS = "id, room_id, nickname, is_host, seat, joined_at, kick_requested_at, last_seen_at";
+export const PLAYER_COLUMNS = "id, room_id, nickname, is_host, seat, joined_at, kick_requested_at, last_seen_at, queued_at";
