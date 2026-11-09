@@ -105,7 +105,6 @@ export function Home() {
 
       {tab === "join" && (
         <Card>
-          <h2 className="mb-3 font-bold">Camere deschise</h2>
           <RoomList
             selected={picked?.code === code ? code : null}
             onSelect={pickRoom}

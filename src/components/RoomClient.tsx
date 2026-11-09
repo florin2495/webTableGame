@@ -54,17 +54,24 @@ function useRoomState(code: string, token: string) {
   const [state, setState] = useState<RoomState | null>(null);
   const [error, setError] = useState("");
   const [missing, setMissing] = useState(false);
-  const latest = useRef(0);
+  const shownVersion = useRef(-1);
+  const myId = useRef<string | null>(null);
 
-  const refresh = useCallback(async () => {
-    const id = ++latest.current;
+  // Shows a state unless it is older than the one on screen (a slow answer must not undo a newer one).
+  const apply = useCallback((s: RoomState) => {
+    if (s.room.version < shownVersion.current) return;
+    shownVersion.current = s.room.version;
+    myId.current = s.me.id;
+    setState(s);
+    setError("");
+  }, []);
+
+  // refresh(s): the action's own response already carries the new state - show it, no /state request.
+  const refresh = useCallback(async (known?: RoomState) => {
+    if (known) return apply(known);
     try {
-      const s = await api<RoomState>(`/api/rooms/${code}/state`, { token });
-      if (id !== latest.current) return; // a newer request already answered
-      setState(s);
-      setError("");
+      apply(await api<RoomState>(`/api/rooms/${code}/state`, { token }));
     } catch (err) {
-      if (id !== latest.current) return;
       if (err instanceof ApiRequestError && err.status === 401) {
         // Another tab may already hold a newer token for this room (seat reclaimed): keep that one.
         if (parseSession(readSessionRaw(code))?.token !== token) return;
@@ -76,7 +83,7 @@ function useRoomState(code: string, token: string) {
         setError(err instanceof Error ? err.message : "Eroare.");
       }
     }
-  }, [code, token]);
+  }, [code, token, apply]);
 
   // Bumping this tears the Realtime channel down and subscribes again (phones kill sockets in the background).
   const [reconnectKey, setReconnectKey] = useState(0);
@@ -122,7 +129,11 @@ function useRoomState(code: string, token: string) {
     let retry: number | undefined;
     const channel = client
       .channel(`backgammon-room:${roomId}`)
-      .on("broadcast", { event: "refresh" }, () => void refresh())
+      .on("broadcast", { event: "refresh" }, (msg) => {
+        // My own action's response carries the state already: no second /state for it.
+        if (msg.payload?.by && msg.payload.by === myId.current) return;
+        void refresh();
+      })
       .subscribe((status) => {
         if (disposed) return; // CLOSED from our own cleanup
         if (status === "SUBSCRIBED") void refresh(); // catch anything missed while connecting

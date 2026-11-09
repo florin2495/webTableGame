@@ -3,7 +3,7 @@ import { notifyRoom } from "@/lib/server/broadcast";
 import { fail, handle, readJson } from "@/lib/server/http";
 import { finishGamePatch } from "@/lib/server/match";
 import { reportRound } from "@/lib/server/leaderboard";
-import { requireMember, requireSeated, requireStatus, updateRoom } from "@/lib/server/room";
+import { requireMember, requireSeated, requireStatus, stateAfter, updateRoom } from "@/lib/server/room";
 
 // POST /api/rooms/[code]/move  { moves: [{from, die}] } - plays the whole turn at once.
 // The server replays and validates every move; the client's own check is only for the UI.
@@ -23,9 +23,11 @@ export async function POST(req: Request, ctx: RouteContext<"/api/rooms/[code]/mo
     const next = commitTurn(game, moves);
     if (typeof next === "string") fail(409, next);
 
-    await updateRoom(room, next.phase === "over" ? finishGamePatch(room, next) : { game: next });
+    const patch = next.phase === "over" ? finishGamePatch(room, next) : { game: next };
+    await updateRoom(room, patch);
     if (next.phase === "over") await reportRound(room, next, room.rounds_played + 1);
-    await notifyRoom(room.id, next.phase === "over" ? "game_over" : "moved");
-    return { ok: true };
+    const state = await stateAfter(room, patch, player);
+    await notifyRoom(room.id, next.phase === "over" ? "game_over" : "moved", player.id);
+    return { ok: true, state };
   });
 }

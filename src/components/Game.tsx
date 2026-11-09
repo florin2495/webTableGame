@@ -30,7 +30,7 @@ interface Props {
   state: RoomState;
   game: GameState;
   token: string;
-  refresh: () => Promise<void>;
+  refresh: (known?: RoomState) => Promise<void>;
 }
 
 const soundOn = () => readPref(PREF_SOUND) !== "0";
@@ -198,8 +198,8 @@ function Play({ state, game, token, refresh, nick, remotePlayback }: Props & { n
     setBusy(true);
     setError("");
     try {
-      await api(`/api/rooms/${room.code}/${path}`, { token, body });
-      await refresh();
+      const res = await api<{ state?: RoomState }>(`/api/rooms/${room.code}/${path}`, { token, body });
+      await refresh(res.state); // the response carries the new state; plain refresh only if it does not
     } catch (err) {
       setError(err instanceof Error ? err.message : "Eroare.");
       await refresh();
@@ -410,8 +410,8 @@ function GameOver({ state, game, token, refresh, nick }: Props & { nick: (s: Sea
     setBusy(true);
     setError("");
     try {
-      await api(`/api/rooms/${room.code}/${path}`, { token, body: {} });
-      await refresh();
+      const res = await api<{ state?: RoomState }>(`/api/rooms/${room.code}/${path}`, { token, body: {} });
+      await refresh(res.state);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Eroare.");
     } finally {

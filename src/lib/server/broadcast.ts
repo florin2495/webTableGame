@@ -8,10 +8,11 @@ export const roomTopic = (roomId: string) => `backgammon-room:${roomId}`;
  * clients re-fetch /state (authenticated). Failures are logged, never thrown -
  * the DB write already succeeded and clients also poll as a fallback.
  */
-export async function notifyRoom(roomId: string, kind: string): Promise<void> {
+export async function notifyRoom(roomId: string, kind: string, by?: string): Promise<void> {
+  // `by`: the player whose action caused it - their own response already carries the new state.
   const channel = db().channel(roomTopic(roomId));
   try {
-    const res = await channel.httpSend("refresh", { kind, at: Date.now() });
+    const res = await channel.httpSend("refresh", { kind, at: Date.now(), by });
     if (!res.success) console.error("broadcast failed", res.status, res.error);
   } catch (err) {
     console.error("broadcast failed", err);

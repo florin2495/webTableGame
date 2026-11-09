@@ -166,3 +166,8 @@ export async function buildState(room: RoomRow, me: PlayerRow): Promise<RoomStat
     game: room.game,
   };
 }
+
+/** The state the caller will see after `updateRoom(room, patch)`: returned by the action so no /state follows. */
+export function stateAfter(room: RoomRow, patch: Partial<RoomRow>, me: PlayerRow): Promise<RoomState> {
+  return buildState({ ...room, ...patch, version: room.version + 1 }, me);
+}
