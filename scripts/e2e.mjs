@@ -261,7 +261,7 @@ async function main() {
     }
     if (turns === 20 && !rejoinedMidGame) {
       rejoinedMidGame = true;
-      const before = JSON.stringify(s.game);
+      const before = JSON.stringify((await state(code, A)).game); // /state, not the move response (built from the patch)
       const re = await call(`/api/rooms/${code}/join`, { body: { nickname: "Ana", password: "pw", deviceId: A.deviceId } });
       check(re.status === 200 && re.data.playerId === A.playerId && re.data.seat === 0, "Ana rejoins mid-game from the same device, keeps white");
       const old = A.token;
