@@ -34,6 +34,13 @@ Rejoin the same seat (`src/lib/reconnect.ts`): every member request stamps `last
 re-joining with an existing nickname reclaims that place (same player id and seat, new token) from the same device
 (`device_hash`) or once it has been unseen for 45 s, also mid-match. `/state` exposes only a derived `connected` flag.
 
+## Abandoned rooms (120 s)
+`GET /api/rooms` (the room list behind "Intră în cameră") first runs `cleanupAbandonedRooms` (`src/lib/server/room.ts`):
+every room in ANY status (also `playing`) whose `last_activity_at` is older than `ROOM_ABANDONED_MS` (120 s, `game.ts`)
+and with no member `last_seen_at` within 120 s (spectators are player rows, `seat` null) is deleted (players cascade).
+Open room pages keep both fresh (`/state` polls every 15 s, touching `last_seen_at` every 10 s and `last_activity_at`
+every 20 s), so only rooms nobody has open disappear. The 10/30-minute idle expiry stays too.
+
 Feedback (`POST /api/feedback`) writes to `hub_feedback` (owned by `florin2495/hailataticu-hub`, slug `backgammon`);
 this game must not be deployed before that table exists.
 

@@ -3,14 +3,15 @@ import { isValidMatchTo, MATCH_DEFAULT, NICKNAME_MAX } from "@/lib/game";
 import { hashDeviceId, hashPassword, hashToken, newPlayerToken, newRoomCode } from "@/lib/server/crypto";
 import { db, PLAYERS, ROOMS } from "@/lib/server/db";
 import { cleanText, fail, handle, isUniqueViolation, readJson } from "@/lib/server/http";
-import { cleanupExpiredRooms } from "@/lib/server/room";
+import { cleanupAbandonedRooms, cleanupExpiredRooms } from "@/lib/server/room";
 import type { RoomListItem } from "@/lib/types";
 
 // GET /api/rooms - public list of open rooms (lobby to join, playing to watch).
+// Loading the list ("Intră în cameră") first sweeps abandoned rooms: no member seen and no activity for 120 s.
 export async function GET() {
   await connection(); // always request-time, never prerendered at build
   return handle(async () => {
-    await cleanupExpiredRooms();
+    await Promise.all([cleanupExpiredRooms(), cleanupAbandonedRooms()]);
     const { data, error } = await db()
       .from(ROOMS)
       .select("code, name, status, match_to, password_hash, last_activity_at, backgammon_players!backgammon_players_room_id_fkey(seat)")

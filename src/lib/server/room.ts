@@ -2,7 +2,14 @@ import "server-only";
 import { kickRemainingMs } from "@/lib/kick";
 import { queuePosition } from "@/lib/queue";
 import { isConnected, LAST_SEEN_TOUCH_MS } from "@/lib/reconnect";
-import { isRoomExpired, minutesLabel, ROOM_IDLE_MINUTES, PLAYING_IDLE_MINUTES } from "@/lib/game";
+import {
+  isRoomAbandoned,
+  isRoomExpired,
+  minutesLabel,
+  PLAYING_IDLE_MINUTES,
+  ROOM_ABANDONED_MS,
+  ROOM_IDLE_MINUTES,
+} from "@/lib/game";
 import type { PublicPlayer, RoomState } from "@/lib/types";
 import { hashToken } from "./crypto";
 import { db, PLAYER_COLUMNS, PLAYERS, ROOM_COLUMNS, ROOMS, type PlayerRow, type RoomRow } from "./db";
@@ -41,6 +48,35 @@ export async function cleanupExpiredRooms(): Promise<void> {
   ]);
   if (a.error) console.error("cleanup failed", a.error);
   if (b.error) console.error("cleanup failed", b.error);
+}
+
+/**
+ * Deletes rooms in ANY status (also "playing") with no activity for ROOM_ABANDONED_MS and no member seen
+ * within it (see isRoomAbandoned; spectators are player rows with seat null, so one embed covers both).
+ * Players cascade on room delete. Best effort: a failure is logged, never thrown.
+ */
+export async function cleanupAbandonedRooms(): Promise<void> {
+  const now = Date.now();
+  const cutoff = new Date(now - ROOM_ABANDONED_MS).toISOString();
+  const { data, error } = await db()
+    .from(ROOMS)
+    .select("id, last_activity_at, backgammon_players!backgammon_players_room_id_fkey(last_seen_at)")
+    .lt("last_activity_at", cutoff)
+    .limit(200);
+  if (error) {
+    console.error("abandoned cleanup (select) failed", error);
+    return;
+  }
+  const ids = (data ?? [])
+    .filter((r) => {
+      const members = (r as unknown as Record<string, { last_seen_at: string | null }[] | null>)[PLAYERS] ?? [];
+      return isRoomAbandoned(r.last_activity_at as string, members.map((m) => m.last_seen_at), now);
+    })
+    .map((r) => r.id as string);
+  if (ids.length === 0) return;
+  // Re-check the activity cutoff in the delete itself, so a room touched meanwhile survives.
+  const { error: delError } = await db().from(ROOMS).delete().in("id", ids).lt("last_activity_at", cutoff);
+  if (delError) console.error("abandoned cleanup (delete) failed", delError);
 }
 
 export async function touchRoom(roomId: string): Promise<void> {
