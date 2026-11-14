@@ -3,7 +3,7 @@
 # webTableGame (Table / backgammon) - project notes for Claude
 
 ## Accounts and deploy
-- GitHub: personal account **florin2495** only (repo `florin2495/webTableGame`, private). Never the work account.
+- GitHub: personal account **florin2495** only (repo `florin2495/webTableGame`, public). Never the work account.
   Local git identity is pinned in `.git/config`.
 - Vercel project is connected by hand by the user. Served at `games.hailatat.icu/backgammon` (`basePath`; the hub proxies it to `web-table-game.vercel.app`, listed in the hub
   `florin2495/hailataticu-hub`, `src/games.ts`).
@@ -49,8 +49,9 @@ Rules for schema changes: new numbered file in `supabase/migrations/`, additive 
 service key from `.env.local`). Never print or commit the keys in `.env.local`.
 
 ## Testing (GitHub Actions, manual only)
-All checks run in GitHub Actions, never locally unless the user explicitly asks. Every workflow is `workflow_dispatch`
-only (no automatic trigger): nothing gates a push, and Vercel deploys `main` regardless.
+Tests run only in GitHub Actions on the free tier (public repo: free, unlimited minutes on standard runners), with
+`runs-on: ubuntu-latest` only: never larger, macOS, Windows or any billed runner, and never locally (see
+`D:\_DEv\CLAUDE.md`). Every workflow is `workflow_dispatch` only (no automatic trigger): nothing gates a push, and Vercel deploys `main` regardless.
 Start one with `gh workflow run <file> --ref main`, then `gh run watch` (or the Actions tab, "Run workflow").
 
 | Workflow | Runs |
