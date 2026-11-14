@@ -297,6 +297,7 @@ export function Board({ board: finalBoard, view, selectable, selected = null, de
           {columns.map(({ idx, row, c }) => (
             <rect
               key={`t${idx}`}
+              data-testid={`spot-${idx}`}
               x={colX(c)}
               y={row === "top" ? TOP : MID}
               width={PW}
@@ -306,8 +307,8 @@ export function Board({ board: finalBoard, view, selectable, selected = null, de
               onClick={click(idx)}
             />
           ))}
-          <rect x={BAR_X} y={MID} width={PW} height={INNER_H / 2} fill="transparent" onClick={click("bar")} />
-          <rect x={TRAY_X} y={MID} width={44} height={INNER_H / 2} fill="transparent" onClick={click("off")} />
+          <rect data-testid="spot-bar" x={BAR_X} y={MID} width={PW} height={INNER_H / 2} fill="transparent" onClick={click("bar")} />
+          <rect data-testid="spot-off" x={TRAY_X} y={MID} width={44} height={INNER_H / 2} fill="transparent" onClick={click("off")} />
         </g>
       )}
     </svg>

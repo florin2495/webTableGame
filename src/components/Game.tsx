@@ -78,7 +78,10 @@ export function Game({ state, game, token, refresh }: Props) {
       <Play key={room.version} state={state} game={game} token={token} refresh={refresh} nick={nick} remotePlayback={playback} />
       {room.status === "finished" && <GameOver state={state} game={game} token={token} refresh={refresh} nick={nick} />}
       {me.seat === null && (
-        <p className="rounded-lg bg-sky-100 px-3 py-2 text-center text-sm text-sky-900 dark:bg-sky-950 dark:text-sky-200">
+        <p
+          className="rounded-lg bg-sky-100 px-3 py-2 text-center text-sm text-sky-900 dark:bg-sky-950 dark:text-sky-200"
+          data-testid="spectator-banner"
+        >
           👁 Ești spectator. Vezi tabla din partea lui {nick(0)} (Alb).
         </p>
       )}
@@ -265,7 +268,15 @@ function Play({ state, game, token, refresh, nick, remotePlayback }: Props & { n
   const usedCount = allDice.length - remaining.length;
 
   return (
-    <Card className="p-2 sm:p-3">
+    <Card
+      className="p-2 sm:p-3"
+      data-testid="play"
+      data-version={room.version}
+      data-status={room.status}
+      data-turn={game.turn}
+      data-phase={game.phase}
+      data-game-no={game.gameNo}
+    >
       <Board
         board={shownBoard}
         view={view}
@@ -303,7 +314,12 @@ function Play({ state, game, token, refresh, nick, remotePlayback }: Props & { n
         )}
 
         {myTurn && game.phase === "roll" && !needsRoll && (
-          <Button className="w-full max-w-xs text-lg" onClick={() => void send("roll").then(() => soundOn() && playDice())} disabled={busy}>
+          <Button
+            className="w-full max-w-xs text-lg"
+            onClick={() => void send("roll").then(() => soundOn() && playDice())}
+            disabled={busy}
+            data-testid="roll"
+          >
             🎲 Aruncă zarurile
           </Button>
         )}
@@ -318,10 +334,11 @@ function Play({ state, game, token, refresh, nick, remotePlayback }: Props & { n
                 setSelected(null);
               }}
               disabled={busy || batches.length === 0}
+              data-testid="undo-turn"
             >
               ↶ Anulează
             </Button>
-            <Button onClick={() => void send("move", { moves })} disabled={busy || !progress?.done}>
+            <Button onClick={() => void send("move", { moves })} disabled={busy || !progress?.done} data-testid="confirm-turn">
               Confirmă
             </Button>
           </div>
@@ -335,6 +352,7 @@ function Play({ state, game, token, refresh, nick, remotePlayback }: Props & { n
             type="button"
             className="text-xs font-semibold text-zinc-500 underline disabled:opacity-40"
             disabled={busy}
+            data-testid="resign"
             onClick={() => {
               if (window.confirm("Cedezi jocul? Adversarul primește punctele (2 dacă n-ai scos nicio piesă).")) void send("resign");
             }}
@@ -421,7 +439,7 @@ function GameOver({ state, game, token, refresh, nick }: Props & { nick: (s: Sea
 
   if (winner === null) return null;
   return (
-    <Card className="border-amber-300 bg-amber-50 text-center dark:border-amber-800 dark:bg-amber-950">
+    <Card className="border-amber-300 bg-amber-50 text-center dark:border-amber-800 dark:bg-amber-950" data-testid="game-over">
       <p className="text-2xl font-black">
         🏆 {nick(winner)} {matchWinner !== null ? "câștigă meciul!" : "câștigă jocul"}
       </p>
@@ -430,7 +448,7 @@ function GameOver({ state, game, token, refresh, nick }: Props & { nick: (s: Sea
       </p>
       <div className="mt-3 flex flex-col gap-2">
         {matchWinner === null && me.seat !== null && (
-          <Button onClick={() => void send("next")} disabled={busy}>
+          <Button onClick={() => void send("next")} disabled={busy} data-testid="next-game">
             Jocul următor
           </Button>
         )}
@@ -438,7 +456,7 @@ function GameOver({ state, game, token, refresh, nick }: Props & { nick: (s: Sea
           <p className="text-xs text-zinc-500">Așteptăm ca jucătorii să pornească jocul următor.</p>
         )}
         {isHost && (
-          <Button variant="secondary" onClick={() => void send("lobby")} disabled={busy}>
+          <Button variant="secondary" onClick={() => void send("lobby")} disabled={busy} data-testid="back-to-lobby">
             {matchWinner !== null ? "Meci nou (înapoi în lobby)" : "Oprește meciul (înapoi în lobby)"}
           </Button>
         )}

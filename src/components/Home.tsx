@@ -91,6 +91,7 @@ export function Home() {
           <button
             key={t}
             role="tab"
+            data-testid={`tab-${t}`}
             aria-selected={tab === t}
             onClick={() => {
               setTab(t);
@@ -169,7 +170,7 @@ export function Home() {
           )}
 
           <ErrorText>{error}</ErrorText>
-          <Button type="submit" disabled={busy}>
+          <Button type="submit" disabled={busy} data-testid="home-submit">
             {busy ? "Se încarcă…" : tab === "create" ? "Creează camera" : "Intră"}
           </Button>
         </form>

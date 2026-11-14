@@ -44,7 +44,7 @@ export function Lobby({ state, token, refresh }: Props) {
   const start = () => run(() => api(`${base}/start`, { token, body: {} }));
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" data-testid="lobby">
       <Card>
         <h2 className="mb-3 font-bold">La masă</h2>
         <div className="grid grid-cols-2 gap-3">
@@ -54,6 +54,7 @@ export function Lobby({ state, token, refresh }: Props) {
             return (
               <div
                 key={s}
+                data-testid={`seat-${s}`}
                 className={`flex flex-col items-center gap-2 rounded-xl border p-3 text-center ${mine ? "border-indigo-500" : "border-zinc-200 dark:border-zinc-800"}`}
               >
                 <CheckerDot seat={s} size={36} />
@@ -91,7 +92,7 @@ export function Lobby({ state, token, refresh }: Props) {
         )}
         {isHost ? (
           <>
-            <Button className="mt-4 w-full" onClick={() => void start()} disabled={busy || !bothSeated}>
+            <Button className="mt-4 w-full" onClick={() => void start()} disabled={busy || !bothSeated} data-testid="start-match">
               Pornește meciul
             </Button>
             {!bothSeated && (

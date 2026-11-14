@@ -235,7 +235,7 @@ function LeaveButton({ state, token }: { state: RoomState; token: string }) {
 
   return (
     <div className="pb-6 pt-2 text-center">
-      <Button variant="danger" className="w-full" onClick={() => void leave()} disabled={busy}>
+      <Button variant="danger" className="w-full" onClick={() => void leave()} disabled={busy} data-testid="leave">
         {busy ? "Se iese…" : seated && room.status !== "lobby" ? "Părăsește meciul" : "Părăsește camera"}
       </Button>
       <div className="mt-2">
@@ -273,7 +273,7 @@ function RoomHeader({ state }: { state: RoomState }) {
           ← Table
         </Link>
         <h1 className="truncate text-xl font-black">{room.name}</h1>
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-zinc-500" data-testid="room-status" data-status={room.status}>
           Meci până la {room.matchTo} · {statusLabel}
         </p>
       </div>
@@ -283,7 +283,9 @@ function RoomHeader({ state }: { state: RoomState }) {
           className="rounded-lg border border-zinc-300 px-3 py-1.5 text-center dark:border-zinc-700"
           aria-label="Invită prieteni"
         >
-          <span className="block font-mono text-lg font-bold tracking-widest">{room.code}</span>
+          <span className="block font-mono text-lg font-bold tracking-widest" data-testid="room-code">
+            {room.code}
+          </span>
           <span className="block text-[10px] font-semibold uppercase text-zinc-500">{copied ? "Link copiat" : "Invită"}</span>
         </button>
         <FeedbackButton compact />
@@ -347,7 +349,7 @@ function JoinForm({ code }: { code: string }) {
             autoComplete="off"
           />
           <ErrorText>{error}</ErrorText>
-          <Button type="submit" disabled={busy}>
+          <Button type="submit" disabled={busy} data-testid="join-submit">
             {busy ? "Se încarcă…" : "Intră"}
           </Button>
         </form>

@@ -40,7 +40,13 @@ export function QueueButton({ state, token, refresh }: { state: RoomState; token
 
   return (
     <div className="flex flex-col gap-1">
-      <Button variant={me.queued ? "secondary" : "primary"} className="w-full" onClick={() => void toggle()} disabled={busy}>
+      <Button
+        variant={me.queued ? "secondary" : "primary"}
+        className="w-full"
+        onClick={() => void toggle()}
+        disabled={busy}
+        data-testid="queue-toggle"
+      >
         {me.queued ? `În coadă (locul ${me.queuePosition ?? "?"}) - renunță` : "Intră la runda următoare"}
       </Button>
       <ErrorText>{error}</ErrorText>
@@ -77,9 +83,16 @@ export function MemberList({ state, token, refresh }: { state: RoomState; token:
 
   return (
     <>
-      <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+      <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800" data-testid="member-list">
         {players.map((p) => (
-          <li key={p.id} className="flex items-center justify-between gap-2 py-2">
+          <li
+            key={p.id}
+            className="flex items-center justify-between gap-2 py-2"
+            data-testid="member"
+            data-nickname={p.nickname}
+            data-seat={p.seat ?? "spectator"}
+            data-queued={p.queued ? "true" : "false"}
+          >
             <span className="flex min-w-0 items-center gap-2">
               {p.seat !== null ? <CheckerDot seat={p.seat} /> : <span aria-hidden>👁</span>}
               <span className="truncate">
