@@ -268,8 +268,10 @@ function Play({ state, game, token, refresh, nick, remotePlayback }: Props & { n
   const usedCount = allDice.length - remaining.length;
 
   return (
+    // Phones: no side padding around the board (Card's p-4 is overridden by px-0), so on a 390 px screen it is
+    // 364 px wide and each point's tap target ~24.5 px (WCAG 2.5.8 minimum 24 px). The controls below keep a gutter.
     <Card
-      className="p-2 sm:p-3"
+      className="px-0 py-2 sm:p-3"
       data-testid="play"
       data-version={room.version}
       data-status={room.status}
@@ -289,7 +291,7 @@ function Play({ state, game, token, refresh, nick, remotePlayback }: Props & { n
         onSpot={canMove ? onSpot : undefined}
       />
 
-      <div className="mt-3 flex flex-col items-center gap-3">
+      <div className="mt-3 flex flex-col items-center gap-3 px-2 sm:px-0">
         {game.dice && room.status === "playing" && (
           <div className="flex items-center gap-2">
             <CheckerDot seat={game.turn} size={20} />

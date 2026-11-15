@@ -7,10 +7,11 @@ import { createRoom, expectNoHorizontalScroll, joinRoom, leaveAll, playTurns, RE
 /** Buttons: Apple / Material recommend 44 px; the Button component has min-h-11 (44 px). */
 const MIN_BUTTON_PX = 40;
 /**
- * Board points: on a 390 px wide phone a point column is ~23 px wide, but its tap area is the whole half-board
- * height (~135 px), so the area is generous. Keep a floor so a layout change cannot squeeze it further.
+ * Board points: on a 390 px wide phone the board spans the card edge to edge (no side padding, see Game.tsx), so
+ * a point column is ~24.5 px wide (WCAG 2.5.8 minimum: 24 px) and its tap area is the whole half-board height
+ * (~140 px). Keep these floors so a layout change cannot squeeze them.
  */
-const MIN_POINT_W = 20;
+const MIN_POINT_W = 24;
 const MIN_POINT_H = 100;
 
 test("home, lobby and game fit a phone screen and work by touch", async ({ browser }) => {
