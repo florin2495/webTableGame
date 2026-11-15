@@ -5,7 +5,6 @@ import { isConnected, LAST_SEEN_TOUCH_MS } from "@/lib/reconnect";
 import {
   isRoomAbandoned,
   isRoomExpired,
-  minutesLabel,
   PLAYING_IDLE_MINUTES,
   ROOM_ABANDONED_MS,
   ROOM_IDLE_MINUTES,
@@ -16,7 +15,7 @@ import { db, PLAYER_COLUMNS, PLAYERS, ROOM_COLUMNS, ROOMS, type PlayerRow, type 
 import { fail } from "./http";
 import { enforceExpiredKicks } from "./kick";
 
-const GONE = `Camera nu există sau a fost închisă după ${minutesLabel(ROOM_IDLE_MINUTES)} de inactivitate.`;
+const GONE = "Camera nu mai există (a fost închisă după inactivitate).";
 
 export function normalizeCode(code: string): string {
   const c = decodeURIComponent(code).trim().toUpperCase();

@@ -7,7 +7,7 @@ import { cleanupAbandonedRooms, cleanupExpiredRooms } from "@/lib/server/room";
 import type { RoomListItem } from "@/lib/types";
 
 // GET /api/rooms - public list of open rooms (lobby to join, playing to watch).
-// Loading the list ("Intră în cameră") first sweeps abandoned rooms: no member seen and no activity for 120 s.
+// Loading the list ("Intră în cameră") first sweeps abandoned rooms: no member seen and no activity for 600 s.
 export async function GET() {
   await connection(); // always request-time, never prerendered at build
   return handle(async () => {

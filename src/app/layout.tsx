@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: { capable: true, title: "Table", statusBarStyle: "default" },
   other: { "apple-mobile-web-app-capable": "yes" },
-  description: "Table (backgammon) în doi, pe telefon, cu prietenii. Încă doi pot privi.",
+  description: "Table (backgammon) în doi, pe telefon, cu prietenii, care pot privi.",
 };
 
 export const viewport: Viewport = {

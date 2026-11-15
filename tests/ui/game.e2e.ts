@@ -1,6 +1,6 @@
 // Scenario 1: two real browsers play a live match on the deployed site: create (password, match to 1 point), join
 // by link, start, several real turns played by tapping the board (dice read from the room state, a legal move
-// picked with the game's rules), every turn reaching the other screen through Realtime (well under the 15 s
+// picked with the game's rules), every turn reaching the other screen through Realtime (well under the 60 s
 // polling fallback), resign = the game and the match end on both screens, back to the lobby, leave.
 // Runs on every project.
 import { expect, test } from "@playwright/test";

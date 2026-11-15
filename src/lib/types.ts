@@ -10,7 +10,7 @@ export interface PublicPlayer {
   seat: Seat | null;
   /** Ms left of a pending host kick (10 s countdown, game in progress); null = no pending kick. */
   kickRemainingMs: number | null;
-  /** Seen in the last 45 s (see lib/reconnect.ts). False = phone in the background, closed tab, no network. */
+  /** Seen in the last 301 s (see lib/reconnect.ts). False = phone in the background, closed tab, no network. */
   connected: boolean;
   /** Spectator waiting for a seat ("Intră la runda următoare"). Always false for seated players. */
   queued: boolean;

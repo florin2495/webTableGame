@@ -18,7 +18,7 @@ interface MemberRow {
 
 // POST /api/rooms/[code]/join  { nickname, password?, deviceId? }
 // A nickname that already has a place in the room (seat or spectator) reclaims it (same player id, same seat,
-// new token) when the request comes from the same device or the place has been disconnected for 45 s - also
+// new token) when the request comes from the same device or the place has been disconnected for 301 s - also
 // mid-game. Otherwise: in the lobby the newcomer takes a free seat if there is one; else (or while a game runs)
 // they join as a spectator. At most MAX_SPECTATORS spectators per room.
 export async function POST(req: Request, ctx: RouteContext<"/api/rooms/[code]/join">) {

@@ -7,15 +7,21 @@ const GAME_SLUG = "backgammon";
 /** Leaderboard identity: the nickname, trimmed and lowercased (no accounts: same nickname = same person). */
 export const playerKey = (nickname: string) => nickname.trim().toLowerCase();
 
+/** Rooms created by the e2e tests (scripts/e2e.mjs, tests/ui) never reach the shared leaderboard. */
+export function isTestRoom(roomName: string): boolean {
+  return roomName.startsWith("e2e-test-");
+}
+
 /**
  * Reports a finished game to the hub-owned `hub_leaderboard` (+1 games for both players, +1 wins for the winner).
  * Idempotent: the round is claimed first in `hub_leaderboard_rounds` (PK game, room_code, round_no); a duplicate
  * means it was already counted. Best effort - it never throws, a leaderboard problem must not break the game.
  * `roundNo` is the room's rounds_played counter (game.gameNo restarts with every match).
+ * Test rooms (isTestRoom) are skipped.
  */
 export async function reportRound(room: RoomRow, game: GameState, roundNo: number): Promise<void> {
   try {
-    if (game.winner === null) return;
+    if (game.winner === null || isTestRoom(room.name)) return;
     const { data: members, error: membersError } = await db()
       .from(PLAYERS)
       .select("nickname, seat")

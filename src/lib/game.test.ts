@@ -299,13 +299,14 @@ describe("misc", () => {
   it(`abandons a room (any status) after ${ROOM_ABANDONED_MS / 1000} s with nobody seen`, () => {
     const now = Date.parse("2026-11-14T12:00:00Z");
     const sec = (s: number) => new Date(now - s * 1000).toISOString();
-    expect(isRoomAbandoned(sec(121), [sec(300), sec(200)], now)).toBe(true);
-    expect(isRoomAbandoned(sec(121), [], now)).toBe(true);
-    expect(isRoomAbandoned(sec(121), [null], now)).toBe(true);
+    expect(ROOM_ABANDONED_MS).toBe(600_000);
+    expect(isRoomAbandoned(sec(601), [sec(900), sec(700)], now)).toBe(true);
+    expect(isRoomAbandoned(sec(601), [], now)).toBe(true);
+    expect(isRoomAbandoned(sec(601), [null], now)).toBe(true);
     // kept while the last activity is recent
-    expect(isRoomAbandoned(sec(119), [], now)).toBe(false);
-    // kept while any player or spectator was seen recently
-    expect(isRoomAbandoned(sec(600), [sec(600), sec(30)], now)).toBe(false);
+    expect(isRoomAbandoned(sec(599), [], now)).toBe(false);
+    // kept while any player or spectator was seen recently (a phone locked for a few minutes is fine)
+    expect(isRoomAbandoned(sec(3600), [sec(3600), sec(300)], now)).toBe(false);
   });
 
   it("doubles enumerate quickly", () => {

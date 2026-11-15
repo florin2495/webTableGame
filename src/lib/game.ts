@@ -55,7 +55,7 @@ export function isRoomExpired(status: string, lastActivityAt: string | Date, now
  * member (seated player or spectator, both are player rows) has been seen within it. Swept every time
  * the room list loads (GET /api/rooms).
  */
-export const ROOM_ABANDONED_MS = 120_000;
+export const ROOM_ABANDONED_MS = 600_000;
 
 export function isRoomAbandoned(
   lastActivityAt: string | Date,

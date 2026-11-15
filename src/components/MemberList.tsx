@@ -8,7 +8,7 @@ import { CheckerDot } from "./Dice";
 import { PendingKickBadge } from "./KickUi";
 import { Button, ErrorText } from "./ui";
 
-/** Shown next to a member not seen for 45 s (phone in the background, closed tab, no network). */
+/** Shown next to a member not seen for 301 s (phone in the background, closed tab, no network). */
 export function OfflineBadge({ connected }: { connected: boolean | undefined }) {
   if (connected !== false) return null;
   return (

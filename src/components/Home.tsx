@@ -81,7 +81,7 @@ export function Home() {
       </div>
       <header className="text-center">
         <h1 className="text-4xl font-black tracking-tight">Table</h1>
-        <p className="mt-1 text-sm text-zinc-500">Table în doi, pe telefon. Încă doi prieteni pot privi.</p>
+        <p className="mt-1 text-sm text-zinc-500">Table în doi, pe telefon. Prietenii pot privi.</p>
       </header>
 
       <RejoinCards onRejoin={(c) => router.push(`/room/${c}`)} />
@@ -179,7 +179,7 @@ export function Home() {
       <details className="text-sm text-zinc-600 dark:text-zinc-400">
         <summary className="cursor-pointer font-semibold">Reguli</summary>
         <ol className="mt-2 list-decimal space-y-1 pl-5">
-          <li>Doi jucători: Alb și Negru, câte 15 piese. Încă doi pot intra în cameră ca spectatori, oricând.</li>
+          <li>Doi jucători: Alb și Negru, câte 15 piese. Alții pot intra în cameră ca spectatori, oricând.</li>
           <li>La început fiecare dă cu un zar. Cine are zarul mai mare începe și mută cu ambele zaruri.</li>
           <li>Muți piesele spre casa ta. Nu poți ajunge pe un punct cu 2+ piese adverse. O piesă singură adversă e lovită și pusă pe bară.</li>
           <li>Cu piese pe bară, trebuie să le intri mai întâi. Dubla (ex. 4-4) se joacă de 4 ori.</li>
